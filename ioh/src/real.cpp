@@ -497,6 +497,81 @@ void define_bbob(py::module &m)
 }
 
 
+static adversarial::AdversarialAttack adversarial_attack_init(const std::string &dataset, const int instance,
+                                                              const double eps, const double alpha,
+                                                              const bool clamp_input)
+{
+    const std::string name = fmt::format("AdversarialAttack{}", dataset == "mnist" ? "MNIST" : "CIFAR10");
+    return adversarial::AdversarialAttack(0, instance, 0, name, dataset, eps, alpha, clamp_input);
+}
+
+void define_adversarial_problems(py::module &m)
+{
+    using namespace ioh::problem::adversarial;
+
+    py::class_<AdversarialAttack, RealSingleObjective, std::shared_ptr<AdversarialAttack>>(
+        m, "AdversarialAttack", R"pbdoc(
+            Black-box adversarial-attack problems (amhe-attack), proposed as a many-dimensional
+            global optimization benchmark: search for a bounded perturbation of a fixed,
+            correctly-classified image that minimizes the classifier's confidence in the true
+            label, penalized by the perturbation's L2 norm.
+
+            f(delta) = -log softmax(model(x + delta))[y] - alpha * ||delta||_2, maximized.
+
+            `instance` selects which of 100 bundled base images is attacked -- unlike most IOH
+            problems, this changes the entire landscape, not an affine transformation of one
+            fixed function. `x + delta` is NOT clamped to [0, 1] by default.
+
+            Reference
+            ---------
+            https://github.com/wz7475/amhe-attack
+        )pbdoc")
+        .def(py::init(&adversarial_attack_init), py::arg("dataset") = "mnist", py::arg("instance") = 1,
+             py::arg("eps") = 0.3, py::arg("alpha") = 0.0, py::arg("clamp_input") = false,
+             R"pbdoc(
+                Parameters
+                ----------
+                dataset: str
+                    "mnist" (784 dimensions) or "cifar10" (3072 dimensions)
+                instance: int = 1
+                    Selects the base image: `(instance - 1) mod 100` into the bundled image bank
+                eps: float = 0.3
+                    Perturbation bound: search space is [-eps, eps]^d
+                alpha: float = 0.0
+                    Weight of the L2 perturbation-size penalty
+                clamp_input: bool = False
+                    Whether to clamp x + delta to [0, 1] before classification
+             )pbdoc")
+        .def_property_readonly("dataset", &AdversarialAttack::dataset)
+        .def_property_readonly("eps", &AdversarialAttack::eps)
+        .def_property_readonly("alpha", &AdversarialAttack::alpha)
+        .def_property_readonly("image_index", &AdversarialAttack::image_index)
+        .def_property_readonly("true_label", &AdversarialAttack::true_label)
+        .def_property_readonly("clamp_input", &AdversarialAttack::clamp_input)
+        .def("predicted_label", &AdversarialAttack::predicted_label,
+             "argmax of the most recent evaluation's logits; != true_label means the attack succeeded")
+        .def("probabilities", &AdversarialAttack::probabilities,
+             "Softmax probabilities from the most recent evaluation")
+        .def_static(
+            "create",
+            [](const std::string &name, int iid, int dim) {
+                return ioh::common::Factory<AdversarialAttack, int, int>::instance().create(name, iid, dim);
+            },
+            py::arg("problem_name"), py::arg("instance_id"), py::arg("dimension"),
+            "Create a registered preset by name (dimension is ignored: fixed per dataset)")
+        .def_static(
+            "create",
+            [](int id, int iid, int dim) {
+                return ioh::common::Factory<AdversarialAttack, int, int>::instance().create(id, iid, dim);
+            },
+            py::arg("problem_id"), py::arg("instance_id"), py::arg("dimension"),
+            "Create a registered preset by id (dimension is ignored: fixed per dataset)")
+        .def_property_readonly_static(
+            "problems", [](py::object) { return ioh::common::Factory<AdversarialAttack, int, int>::instance().map(); },
+            "All registered (dataset, eps, alpha) presets");
+}
+
+
 void define_dynamic_bin_val_problem(py::module &m)
 {
     using namespace ioh::problem::dynamic_bin_val;

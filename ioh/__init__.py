@@ -117,6 +117,8 @@ class ProblemClass(enum.Enum):
     CEC2013 = "CEC2013"
     CEC2022 = "CEC2022"
 
+    ADVERSARIAL = "AdversarialAttack"
+
     def is_real(self):
         return self in (
                 ProblemClass.CEC2013,
@@ -125,6 +127,7 @@ class ProblemClass(enum.Enum):
                 ProblemClass.BBOB,
                 ProblemClass.SBOX,
                 ProblemClass.STAR_REAL,
+                ProblemClass.ADVERSARIAL,
                 ) 
     
     def is_single_objective(self):

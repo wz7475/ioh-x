@@ -311,6 +311,7 @@ void define_star_discrepancy_problems(py::module &m);
 void define_many_affine(py::module &m);
 void define_funnel(py::module &m);
 void define_dynamic_bin_val_problem(py::module &m);
+void define_adversarial_problems(py::module &m);
 
 
 void define_problem(py::module &m)
@@ -326,6 +327,7 @@ void define_problem(py::module &m)
     define_star_discrepancy_problems(m);
     define_many_affine(m);  
     define_funnel(m);  
+    define_adversarial_problems(m);
 
     py::module_::import("atexit").attr("register")(py::cpp_function([]() {
         for (const auto fn : WRAPPED_FUNCTIONS)

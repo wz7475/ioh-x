@@ -333,6 +333,25 @@ namespace ioh::suite
         }
     };
 
+    //! Black-box adversarial-attack suite (amhe-attack): fixed (dataset, eps, alpha)
+    //! presets as problem ids, image index as instance, dimension fixed per dataset.
+    struct AdversarialAttack final : RealSuite<AdversarialAttack>
+    {
+        /**
+         * @brief Construct a new AdversarialAttack suite object
+         *
+         * @param problem_ids List of problem ids
+         * @param instances List of problem instances, i.e. base-image indices (defaults to first)
+         * @param dimensions ignored: dimension is fixed per problem id's dataset (784 or 3072)
+         */
+        AdversarialAttack(const std::vector<int> &problem_ids = {}, const std::vector<int> &instances = {1},
+             const std::vector<int> &dimensions = {1}) :
+            RealSuite(problem_ids, instances, dimensions, "AdversarialAttack", 100, 1,
+                      reinterpret_cast<Factory &>(problem::ProblemFactoryType<problem::adversarial::AdversarialAttack>::instance()))
+        {
+        }
+    };
+
     //! PBO suite
     struct PBO final : IntegerSuite<PBO>
     {
